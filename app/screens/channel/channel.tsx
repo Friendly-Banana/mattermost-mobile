@@ -9,6 +9,7 @@ import {type Edge, SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area
 import {storeLastViewedChannelIdAndServer, removeLastViewedChannelIdAndServer} from '@actions/app/global';
 import FloatingCallContainer from '@calls/components/floating_call_container';
 import FreezeScreen from '@components/freeze_screen';
+import {useServerUrl} from '@context/server';
 import useAndroidHardwareBackHandler from '@hooks/android_back_handler';
 import {useChannelSwitch} from '@hooks/channel_switch';
 import {useIsTablet} from '@hooks/device';
@@ -69,6 +70,7 @@ const Channel = ({
 }: ChannelProps) => {
     useGMasDMNotice(currentUserId, channelType, dismissedGMasDMNotice, hasGMasDMFeature);
     const isTablet = useIsTablet();
+    const serverUrl = useServerUrl();
     const insets = useSafeAreaInsets();
     const [shouldRenderPosts, setShouldRenderPosts] = useState(false);
     const switchingTeam = useTeamSwitch();
@@ -78,6 +80,7 @@ const Channel = ({
     const shouldRender = !switchingTeam && !switchingChannels && shouldRenderPosts && Boolean(channelId);
     const isVisible = useIsScreenVisible(componentId);
     const [isEmojiSearchFocused, setIsEmojiSearchFocused] = useState(false);
+    const [highlightedId, setHighlightedId] = useState<string | undefined>();
 
     const safeAreaViewEdges: Edge[] = useMemo(() => {
         if (isTablet) {
@@ -96,6 +99,15 @@ const Channel = ({
     useAndroidHardwareBackHandler(componentId, handleBack);
 
     const marginTop = defaultHeight + (isTablet ? 0 : -insets.top);
+    
+    useEffect(() => {
+        // Retrieve and clear target post ID from ephemeral store
+        const targetPostId = EphemeralStore.getAndClearTargetPostId(serverUrl, channelId);
+        if (targetPostId) {
+            setHighlightedId(targetPostId);
+        }
+    }, [channelId, serverUrl]);
+
     useEffect(() => {
         // This is done so that the header renders
         // and the screen does not look totally blank
@@ -153,6 +165,7 @@ const Channel = ({
                                 containerHeight={containerHeight}
                                 enabled={isVisible || shouldRender}
                                 onEmojiSearchFocusChange={setIsEmojiSearchFocused}
+                                highlightedId={highlightedId}
                             />
                         )}
                     </KeyboardProvider>
@@ -165,6 +178,7 @@ const Channel = ({
                             containerHeight={containerHeight}
                             enabled={isVisible || shouldRender}
                             onEmojiSearchFocusChange={setIsEmojiSearchFocused}
+                            highlightedId={highlightedId}
                         />
                     )
                 )}

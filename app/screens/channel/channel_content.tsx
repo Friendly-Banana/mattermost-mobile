@@ -19,6 +19,7 @@ type ChannelContentProps = {
     containerHeight: number;
     enabled?: boolean;
     onEmojiSearchFocusChange?: (focused: boolean) => void;
+    highlightedId?: string;
 }
 
 const CHANNEL_POST_DRAFT_TESTID = 'channel.post_draft';
@@ -39,6 +40,7 @@ const ChannelContent = ({
     containerHeight,
     enabled = true,
     onEmojiSearchFocusChange,
+    highlightedId,
 }: ChannelContentProps) => {
     return (
         <PortalProvider>
@@ -53,6 +55,7 @@ const ChannelContent = ({
                         listRef={listRef}
                         onTouchMove={onTouchMove}
                         onTouchEnd={onTouchEnd}
+                        highlightedId={highlightedId}
                     />
                 )}
             >
