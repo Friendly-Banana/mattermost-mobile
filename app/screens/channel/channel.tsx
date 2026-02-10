@@ -105,7 +105,15 @@ const Channel = ({
         const targetPostId = EphemeralStore.getAndClearTargetPostId(serverUrl, channelId);
         if (targetPostId) {
             setHighlightedId(targetPostId);
+            
+            // Clear the highlighted ID after 5 seconds to remove the visual highlight
+            const timeout = setTimeout(() => {
+                setHighlightedId(undefined);
+            }, 5000);
+            
+            return () => clearTimeout(timeout);
         }
+        return undefined;
     }, [channelId, serverUrl]);
 
     useEffect(() => {
