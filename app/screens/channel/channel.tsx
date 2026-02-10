@@ -45,6 +45,8 @@ type ChannelProps = {
     scheduledPostCount: number;
 };
 
+const HIGHLIGHT_DURATION_MS = 5000;
+
 const styles = StyleSheet.create({
     flex: {
         flex: 1,
@@ -99,18 +101,18 @@ const Channel = ({
     useAndroidHardwareBackHandler(componentId, handleBack);
 
     const marginTop = defaultHeight + (isTablet ? 0 : -insets.top);
-    
+
     useEffect(() => {
         // Retrieve and clear target post ID from ephemeral store
         const targetPostId = EphemeralStore.getAndClearTargetPostId(serverUrl, channelId);
         if (targetPostId) {
             setHighlightedId(targetPostId);
-            
-            // Clear the highlighted ID after 5 seconds to remove the visual highlight
+
+            // Clear the highlighted ID after a few seconds to remove the visual highlight
             const timeout = setTimeout(() => {
                 setHighlightedId(undefined);
-            }, 5000);
-            
+            }, HIGHLIGHT_DURATION_MS);
+
             return () => clearTimeout(timeout);
         }
         return undefined;
