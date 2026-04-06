@@ -44,4 +44,21 @@ describe('EphemeralStore', () => {
         expect(EphemeralStore.getChannelPlaybooksSynced('server-url', 'channel-id-2')).toBe(false);
         expect(EphemeralStore.getChannelPlaybooksSynced('server-url', 'channel-id-3')).toBe(false);
     });
+
+    it('highlighted post in channel', () => {
+        const EphemeralStore = require('./ephemeral_store').default;
+
+        expect(EphemeralStore.getHighlightedPostInChannel('server-url', 'channel-id')).toBeUndefined();
+
+        EphemeralStore.setHighlightedPostInChannel('server-url', 'channel-id', 'post-id');
+        expect(EphemeralStore.getHighlightedPostInChannel('server-url', 'channel-id')).toBe('post-id');
+
+        expect(EphemeralStore.getHighlightedPostInChannel('server-url-2', 'channel-id')).toBeUndefined();
+        EphemeralStore.setHighlightedPostInChannel('server-url-2', 'channel-id', 'post-id-2');
+        expect(EphemeralStore.getHighlightedPostInChannel('server-url-2', 'channel-id')).toBe('post-id-2');
+
+        EphemeralStore.clearHighlightedPostInChannel('server-url', 'channel-id');
+        expect(EphemeralStore.getHighlightedPostInChannel('server-url', 'channel-id')).toBeUndefined();
+        expect(EphemeralStore.getHighlightedPostInChannel('server-url-2', 'channel-id')).toBe('post-id-2');
+    });
 });

@@ -26,6 +26,8 @@ import {usePreventDoubleTap} from '@hooks/utils';
 import SecurityManager from '@managers/security_manager';
 import {getChannelById, getMyChannel} from '@queries/servers/channel';
 import {dismissModal} from '@screens/navigation';
+import EphemeralStore from '@store/ephemeral_store';
+import {logError} from '@utils/log';
 import {closePermalink} from '@utils/permalink';
 import {changeOpacity, makeStyleSheetFromTheme} from '@utils/theme';
 import {typography} from '@utils/typography';
@@ -310,11 +312,21 @@ function Permalink({
 
     useAndroidHardwareBackHandler(Screens.PERMALINK, handleClose);
 
-    const handlePress = usePreventDoubleTap(useCallback(() => {
+    const handlePress = usePreventDoubleTap(useCallback(async () => {
         if (channel) {
-            switchToChannelById(serverUrl, channel.id, channel.teamId);
+            EphemeralStore.setHighlightedPostInChannel(serverUrl, channel.id, postId);
+            await switchToChannelById(serverUrl, channel.id, channel.teamId);
+            const {error: dismissError} = await dismissModal({componentId: Screens.PERMALINK});
+            if (dismissError) {
+                EphemeralStore.clearHighlightedPostInChannel(serverUrl, channel.id);
+                logError('[Permalink.handlePress] failed to dismiss permalink modal', dismissError);
+                return;
+            }
+
+            // closePermalink updates in-memory modal state synchronously.
+            closePermalink();
         }
-    }, [channel, serverUrl]));
+    }, [channel, postId, serverUrl]));
 
     const handleJoin = usePreventDoubleTap(useCallback(async () => {
         setLoading(true);

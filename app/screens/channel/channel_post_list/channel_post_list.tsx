@@ -6,7 +6,7 @@ import {type StyleProp, StyleSheet, type ViewStyle, DeviceEventEmitter, type Fla
 import {type Edge, SafeAreaView} from 'react-native-safe-area-context';
 
 import {markChannelAsRead, unsetActiveChannelOnServer} from '@actions/remote/channel';
-import {fetchPosts, fetchPostsBefore} from '@actions/remote/post';
+import {fetchPosts, fetchPostsAround, fetchPostsBefore} from '@actions/remote/post';
 import {PER_PAGE_DEFAULT} from '@client/rest/constants';
 import PostList from '@components/post_list';
 import {Events, Screens} from '@constants';
@@ -16,6 +16,7 @@ import useDidMount from '@hooks/did_mount';
 import useDidUpdate from '@hooks/did_update';
 import {useDebounce} from '@hooks/utils';
 import EphemeralStore from '@store/ephemeral_store';
+import {logDebug} from '@utils/log';
 
 import Intro from './intro';
 
@@ -35,6 +36,7 @@ type Props = {
 }
 
 const edges: Edge[] = [];
+const HIGHLIGHT_DURATION_MS = 2000;
 const styles = StyleSheet.create({
     flex: {flex: 1},
     containerStyle: {paddingTop: 12},
@@ -51,6 +53,7 @@ const ChannelPostList = ({
     const canLoadPostsBefore = useRef(true);
     const canLoadPost = useRef(true);
     const [fetchingPosts, setFetchingPosts] = useState(EphemeralStore.isLoadingMessagesForChannel(serverUrl, channelId));
+    const [highlightedPostId, setHighlightedPostId] = useState<string | undefined>();
     const oldPostsCount = useRef<number>(posts.length);
 
     const onEndReached = useDebounce(useCallback(async () => {
@@ -66,7 +69,50 @@ const ChannelPostList = ({
 
     useDidUpdate(() => {
         setFetchingPosts(EphemeralStore.isLoadingMessagesForChannel(serverUrl, channelId));
+        setHighlightedPostId(EphemeralStore.getHighlightedPostInChannel(serverUrl, channelId));
     }, [serverUrl, channelId]);
+
+    useEffect(() => {
+        if (!highlightedPostId) {
+            return undefined;
+        }
+
+        let highlightTimeoutId: NodeJS.Timeout | undefined;
+        let isCancelled = false;
+
+        // Best-effort prefetch so the linked post can render immediately after jump.
+        // Failing to prefetch should not block channel navigation or transient highlight display.
+        const prefetchHighlightedPost = async () => {
+            const result = await fetchPostsAround(serverUrl, channelId, highlightedPostId, PER_PAGE_DEFAULT, isCRTEnabled);
+            if (result.error) {
+                logDebug('[ChannelPostList] failed to fetch posts around highlighted post', result.error);
+
+                // If we can't load the target post, clear the transient highlight state to avoid stale highlights.
+                EphemeralStore.clearHighlightedPostInChannel(serverUrl, channelId);
+                setHighlightedPostId(undefined);
+                return;
+            }
+
+            if (!isCancelled) {
+                highlightTimeoutId = setTimeout(() => {
+                    if (isCancelled) {
+                        return;
+                    }
+                    EphemeralStore.clearHighlightedPostInChannel(serverUrl, channelId);
+                    setHighlightedPostId(undefined);
+                }, HIGHLIGHT_DURATION_MS);
+            }
+        };
+        prefetchHighlightedPost();
+
+        return () => {
+            isCancelled = true;
+            EphemeralStore.clearHighlightedPostInChannel(serverUrl, channelId);
+            if (highlightTimeoutId) {
+                clearTimeout(highlightTimeoutId);
+            }
+        };
+    }, [channelId, highlightedPostId, isCRTEnabled, serverUrl]);
 
     useEffect(() => {
         const listener = DeviceEventEmitter.addListener(Events.LOADING_CHANNEL_POSTS, ({serverUrl: eventServerUrl, channelId: eventChannelId, value}) => {
@@ -119,6 +165,7 @@ const ChannelPostList = ({
         <PostList
             channelId={channelId}
             contentContainerStyle={[contentContainerStyle, !isCRTEnabled && styles.containerStyle]}
+            highlightedId={highlightedPostId}
             isCRTEnabled={isCRTEnabled}
             footer={intro}
             lastViewedAt={lastViewedAt}
