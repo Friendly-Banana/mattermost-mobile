@@ -27,6 +27,8 @@ When testing features that require mobile device interaction:
 
 ## Key Commands
 
+> **iOS Simulator Setup:** For detailed iOS simulator setup instructions, troubleshooting CocoaPods issues, and build debugging, see [CLAUDE-IOS-SIMULATOR.md](./CLAUDE-IOS-SIMULATOR.md).
+
 ```bash
 # Setup
 npm run pod-install           # iOS CocoaPods (or pod-install-m1 for M1 Macs)
@@ -65,6 +67,12 @@ npm run clean                 # Clean build artifacts
 
 **DatabaseManager** singleton (`app/database/manager/index.ts`) manages all instances. Data operations go through operators with transformers/handlers/comparators.
 
+**Sync handlers must handle the full lifecycle: create, update, AND delete.** When a handler syncs data from the server (e.g., `handleAIBots`, `handlePlaybookRuns`), it must also remove records that no longer exist on the server. Compare the full set of existing DB records against incoming data and call `prepareDestroyPermanently()` on stale records. Never write a sync handler that only creates/updates.
+
+**Important:** Some server APIs do not return deleted records in their response. When the API only returns active records, the handler can diff against existing DB records to detect removals (as shown above). However, if the API returns a *partial* set of records (e.g., paginated without a deletion flag), you may need to request that the API be augmented to include a `delete_at` field or a separate deletions endpoint so that the handler can correctly identify which records to remove.
+
+**Schema documentation**: When adding or modifying database tables, update `docs/database/server/server.md` (or `app_database/app-database.md`) and bump the schema version number in the header.
+
 **Database directory**:
 - iOS: App Group directory (shared with extensions)
 - Android: `${documentDirectory}/databases/`
@@ -77,6 +85,7 @@ npm run clean                 # Clean build artifacts
 ### Actions Pattern
 - **Local Actions** (`app/actions/local/`): Database-only operations
 - **Remote Actions** (`app/actions/remote/`): Fetch from API → use operators to persist → return `{error}` on failure
+- **Avoid redundant fetches**: Before fetching user profiles, check the DB first. Use `fetchMissingProfilesByIds()` from `@actions/remote/user` instead of raw `client.getProfilesByIds()` — it queries the DB and only fetches missing profiles
 
 ### Query Layer
 **Query layer** (`app/queries/`) provides both:
@@ -142,6 +151,8 @@ Located at `libraries/@mattermost/`:
 **Important:** Share extension on Android uses **React Navigation** (not react-native-navigation like main app).
 
 ## Testing
+
+**Testing guide:** See [docs/testing_guide.md](docs/testing_guide.md) for how to add and structure unit tests.
 
 ### Test Organization
 - **Jest coverage excludes** `/components/` and `/screens/` directories
@@ -233,7 +244,12 @@ Located at `libraries/@mattermost/`:
 - **Prefer const objects over enums** for better tree-shaking: `export const Status = { Pending: 0, Done: 1 } as const;` with companion type `export type Status = typeof Status[keyof typeof Status];`
 
 ### React Hooks
-- **Always explain why dependencies are omitted** from exhaustive-deps with specific comments
+- **`react-hooks/exhaustive-deps` is enforced as error** - incomplete or incorrect dependency arrays will fail CI. Fix deps or use the dedicated hooks below when the omission is intentional.
+- **Always explain why dependencies are omitted** from exhaustive-deps with specific comments (and prefer the dedicated hooks below for common cases).
+- **Run-on-mount effects**: Use **`useDidMount`** from `@hooks/did_mount` instead of `useEffect(callback, [])` with an eslint-disable. The hook encapsulates the "run only on mount" intent and the single exhaustive-deps exception.
+- **Initial value only (no updates)**: Use **`useInitialValue`** from `@hooks/initial_value` instead of `useMemo(factory, [])` with an eslint-disable when the value must be computed once and never recomputed.
+- **Nested property as dependency**: When the meaningful dependency is a nested property (e.g. `currentUser?.notifyProps`) because the parent object reference may not change when that property changes, depend on that property in the array and add an eslint-disable with a comment explaining why. See `useNotificationProps` and `useUserTimezoneProps` in `app/hooks/` for the pattern.
+- **`useDidUpdate`**: The hook takes a dependency list from the caller; the implementation uses an eslint-disable with the comment that dependencies are provided by the caller.
 - Don't over-optimize with `useMemo` - only use for expensive calculations or objects passed as props to children
 - Use `useCallback` for render functions passed to components, not for functions called within render
 - Move module-level constants outside components
@@ -245,7 +261,8 @@ Located at `libraries/@mattermost/`:
 
 ### React Native & UI
 - Don't create hooks inside render functions - extract as local components
-- Prefer `Button` components over `TouchableOpacity` when appropriate
+- **Never use `TouchableOpacity`** — use `Pressable` with pressed feedback instead
+- Prefer `Button` components over `Pressable` when appropriate
 - Non-memoized inline styles add render stress - define in stylesheet instead
 - **`StyleSheet.create` is unnecessary** when using `makeStyleSheetFromTheme` - just return the plain object
 - **Place `getStyleSheet` at file top** (after imports, before interfaces/components) not at the bottom
@@ -255,11 +272,14 @@ Located at `libraries/@mattermost/`:
 - Test components with long strings to ensure proper text handling
 - Use constants from `PREFERENCES.THEMES` instead of hardcoded colors
 - **Use `react-native-reanimated`** instead of React Native's `Animated` API for all animations (better performance, runs on UI thread)
+- **`Pressable` must have pressed feedback**: Always add visual feedback via the style callback, e.g., `style={({pressed}) => [pressed && {opacity: 0.72}]}`. A `Pressable` without pressed state feels broken.
+- **Extract static objects used as props into module-level constants**: Objects like `hitSlop`, `contentContainerStyle`, or any non-dynamic prop object should be a `const` outside the component to avoid creating new references on every render.
 - **Use `usePreventDoubleTap` hook** for button press handlers to prevent accidental double submissions
 - **Use `useServerUrl()` hook** instead of passing `serverUrl` as a prop - it's available via context
 - **Use existing components**: Check for `<Loading>` instead of `<ActivityIndicator>`, `safeParseJSON()` instead of try/catch JSON.parse
 - **Parent checks before mounting**: If a child component would return null for empty data, have the parent conditionally render instead (e.g., `{items.length > 0 && <ItemList items={items} />}`)
 - **Use `@utils/url` utilities**: `tryOpenURL()` instead of `Linking.openURL()`, `getUrlDomain()` with `urlParse` instead of `new URL()`
+- **Use `FormattedText`** instead of `<Text>{intl.formatMessage(...)}</Text>` for static i18n strings. Only fall back to `Text` + `intl.formatMessage` when the text includes dynamic non-translatable content (e.g., a user's display name)
 
 ### Code Quality & Linting
 
@@ -281,6 +301,7 @@ Located at `libraries/@mattermost/`:
 - Use `logError()` instead of `console.error()` or `console.log()`
 - Use `logDebug()` for debug-level information
 - Don't ignore potential errors silently - handle them or add intentional comments
+- **Log on early returns in handlers**: When a handler returns early (e.g., empty input), add a `logDebug` call so the no-op is traceable
 - Don't log sensitive information
 - **Add function/class prefix to logs**: e.g., `logError('[ClassName.methodName]', error)` to make debugging easier
 
@@ -292,7 +313,9 @@ Located at `libraries/@mattermost/`:
 ### Performance
 - Create parsers/expensive objects only once, not on every render (use refs or useMemo)
 - Memoize AST output to avoid regenerating on every render
-- Use named constants instead of magic numbers and check if one already exists.
+- Use named constants instead of magic numbers and check if one already exists
+- **Never use raw `fontSize`, `fontWeight`, or `fontFamily`** in styles — always use `typography()` from `@utils/typography` (e.g., `...typography('Body', 200, 'SemiBold')`)
+- Don't set style properties to their default values (e.g., `marginBottom: 0`) — it's dead code
 
 ### Localization (i18n)
 - **CRITICAL**: Only update `en.json` - never modify other language files or Weblate gets corrupted

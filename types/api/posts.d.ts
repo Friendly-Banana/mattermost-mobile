@@ -49,9 +49,23 @@ type PostPriority = {
     persistent_notifications?: boolean;
 };
 
+// Matches the web client's PostInfo type (GET /api/v4/posts/{post_id}/info).
+// Returns channel/team metadata for a post without requiring channel membership,
+// unlike GET /api/v4/posts/{post_id} which requires ReadChannelContent permission.
+type PostInfo = {
+    channel_id: string;
+    channel_type: ChannelType;
+    channel_display_name: string;
+    has_joined_channel: boolean;
+    team_id: string;
+    team_type: string;
+    team_display_name: string;
+    has_joined_team: boolean;
+}
+
 type PermalinkEmbedData = {
     post_id: string;
-    post: Post;
+    post?: Post;
     team_name: string;
     channel_display_name: string;
     channel_type: string;
@@ -71,6 +85,15 @@ type PostImage = {
     frame_count?: number;
 };
 
+type PostTranslationState = 'ready' | 'skipped' | 'unavailable' | 'processing';
+type PostTranslation = {
+    object: {
+        message: string;
+    };
+    state: PostTranslationState;
+    source_lang?: string;
+};
+
 type PostMetadata = {
     acknowledgements?: PostAcknowledgement[];
     embeds?: PostEmbed[];
@@ -82,6 +105,7 @@ type PostMetadata = {
     expire_at?: number;
     borConfig?: PostBoRConfig;
     recipients?: string[];
+    translations?: Record<string, PostTranslation>;
 };
 
 type Post = {

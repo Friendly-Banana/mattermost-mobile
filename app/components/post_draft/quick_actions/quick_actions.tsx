@@ -1,6 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import AIRewriteAction from '@agents/components/ai_rewrite_action';
 import React from 'react';
 import {StyleSheet, View} from 'react-native';
 
@@ -18,12 +19,14 @@ type Props = {
     testID?: string;
     canUploadFiles: boolean;
     fileCount: number;
+    isAgentsEnabled: boolean;
     isPostPriorityEnabled: boolean;
     isBoREnabled: boolean;
     canShowPostPriority?: boolean;
     canShowSlashCommands?: boolean;
     canShowEmojiPicker?: boolean;
     maxFileCount: number;
+    showAttachLogs?: boolean;
     location?: AvailableScreens;
 
     // Draft Handler
@@ -53,12 +56,14 @@ export default function QuickActions({
     canUploadFiles,
     value,
     fileCount,
+    isAgentsEnabled,
     isPostPriorityEnabled,
     isBoREnabled,
     canShowSlashCommands = true,
     canShowPostPriority,
     canShowEmojiPicker = true,
     maxFileCount,
+    showAttachLogs,
     updateValue,
     addFiles,
     postPriority,
@@ -68,7 +73,7 @@ export default function QuickActions({
     postBoRConfig,
     location,
 }: Props) {
-    const atDisabled = value[value.length - 1] === '@';
+    const atDisabled = value.endsWith('@');
     const slashDisabled = value.length > 0;
     const showBoRAction = isBoREnabled && updatePostBoRStatus && location === Screens.CHANNEL;
 
@@ -76,6 +81,7 @@ export default function QuickActions({
     const slashInputActionTestID = `${testID}.slash_input_action`;
     const emojiActionTestID = `${testID}.emoji_action`;
     const attachmentActionTestID = `${testID}.attachment_action`;
+    const aiRewriteActionTestID = `${testID}.ai_rewrite_action`;
     const postPriorityActionTestID = `${testID}.post_priority_action`;
     const borPriorityActionTestID = `${testID}.bor_action`;
 
@@ -85,6 +91,7 @@ export default function QuickActions({
         maxFileCount,
         maxFilesReached: fileCount >= maxFileCount,
         onUploadFiles: addFiles,
+        showAttachLogs,
     };
 
     return (
@@ -115,6 +122,13 @@ export default function QuickActions({
             {canShowEmojiPicker && (
                 <EmojiAction
                     testID={emojiActionTestID}
+                />
+            )}
+            {isAgentsEnabled && (
+                <AIRewriteAction
+                    testID={aiRewriteActionTestID}
+                    value={value}
+                    updateValue={updateValue}
                 />
             )}
             {isPostPriorityEnabled && canShowPostPriority && (

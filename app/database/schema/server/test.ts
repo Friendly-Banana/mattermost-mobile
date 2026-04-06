@@ -3,10 +3,14 @@
 
 /* eslint-disable max-lines */
 
+import {AGENTS_TABLES} from '@agents/constants/database';
+
 import {MM_TABLES} from '@constants/database';
 import {PLAYBOOK_TABLES} from '@playbooks/constants/database';
 
 import {serverSchema} from './index';
+
+const {AI_BOT, AI_THREAD} = AGENTS_TABLES;
 
 const {
     CATEGORY,
@@ -52,9 +56,53 @@ const {PLAYBOOK_RUN, PLAYBOOK_CHECKLIST, PLAYBOOK_CHECKLIST_ITEM, PLAYBOOK_RUN_A
 describe('*** Test schema for SERVER database ***', () => {
     it('=> The SERVER SCHEMA should strictly match', () => {
         expect(serverSchema).toEqual({
-            version: 17,
+            version: 19,
             unsafeSql: undefined,
             tables: {
+                [AI_BOT]: {
+                    name: AI_BOT,
+                    unsafeSql: undefined,
+                    columns: {
+                        display_name: {name: 'display_name', type: 'string'},
+                        username: {name: 'username', type: 'string'},
+                        last_icon_update: {name: 'last_icon_update', type: 'number'},
+                        dm_channel_id: {name: 'dm_channel_id', type: 'string', isIndexed: true},
+                        channel_access_level: {name: 'channel_access_level', type: 'number'},
+                        channel_ids: {name: 'channel_ids', type: 'string'},
+                        user_access_level: {name: 'user_access_level', type: 'number'},
+                        user_ids: {name: 'user_ids', type: 'string'},
+                        team_ids: {name: 'team_ids', type: 'string'},
+                    },
+                    columnArray: [
+                        {name: 'display_name', type: 'string'},
+                        {name: 'username', type: 'string'},
+                        {name: 'last_icon_update', type: 'number'},
+                        {name: 'dm_channel_id', type: 'string', isIndexed: true},
+                        {name: 'channel_access_level', type: 'number'},
+                        {name: 'channel_ids', type: 'string'},
+                        {name: 'user_access_level', type: 'number'},
+                        {name: 'user_ids', type: 'string'},
+                        {name: 'team_ids', type: 'string'},
+                    ],
+                },
+                [AI_THREAD]: {
+                    name: AI_THREAD,
+                    unsafeSql: undefined,
+                    columns: {
+                        message: {name: 'message', type: 'string'},
+                        title: {name: 'title', type: 'string'},
+                        channel_id: {name: 'channel_id', type: 'string', isIndexed: true},
+                        reply_count: {name: 'reply_count', type: 'number'},
+                        update_at: {name: 'update_at', type: 'number', isIndexed: true},
+                    },
+                    columnArray: [
+                        {name: 'message', type: 'string'},
+                        {name: 'title', type: 'string'},
+                        {name: 'channel_id', type: 'string', isIndexed: true},
+                        {name: 'reply_count', type: 'number'},
+                        {name: 'update_at', type: 'number', isIndexed: true},
+                    ],
+                },
                 [CATEGORY]: {
                     name: CATEGORY,
                     unsafeSql: undefined,
@@ -130,6 +178,7 @@ describe('*** Test schema for SERVER database ***', () => {
                         update_at: {name: 'update_at', type: 'number'},
                         banner_info: {name: 'banner_info', type: 'string', isOptional: true},
                         abac_policy_enforced: {name: 'abac_policy_enforced', type: 'boolean', isOptional: true},
+                        autotranslation: {name: 'autotranslation', type: 'boolean', isOptional: true},
                     },
                     columnArray: [
                         {name: 'create_at', type: 'number'},
@@ -144,6 +193,7 @@ describe('*** Test schema for SERVER database ***', () => {
                         {name: 'update_at', type: 'number'},
                         {name: 'banner_info', type: 'string', isOptional: true},
                         {name: 'abac_policy_enforced', type: 'boolean', isOptional: true},
+                        {name: 'autotranslation', type: 'boolean', isOptional: true},
                     ],
                 },
                 [CHANNEL_BOOKMARK]: {
@@ -269,6 +319,7 @@ describe('*** Test schema for SERVER database ***', () => {
                         viewed_at: {name: 'viewed_at', type: 'number'},
                         last_fetched_at: {name: 'last_fetched_at', type: 'number', isIndexed: true},
                         last_playbook_runs_fetch_at: {name: 'last_playbook_runs_fetch_at', type: 'number'},
+                        autotranslation_disabled: {name: 'autotranslation_disabled', type: 'boolean', isOptional: true},
                     },
                     columnArray: [
                         {name: 'is_unread', type: 'boolean'},
@@ -281,6 +332,7 @@ describe('*** Test schema for SERVER database ***', () => {
                         {name: 'viewed_at', type: 'number'},
                         {name: 'last_fetched_at', type: 'number', isIndexed: true},
                         {name: 'last_playbook_runs_fetch_at', type: 'number'},
+                        {name: 'autotranslation_disabled', type: 'boolean', isOptional: true},
                     ],
                 },
                 [MY_CHANNEL_SETTINGS]: {

@@ -5,7 +5,7 @@
 
 import RNUtils from '@mattermost/rnutils';
 import merge from 'deepmerge';
-import {Appearance, DeviceEventEmitter, Platform, Alert, type EmitterSubscription, Keyboard, StatusBar} from 'react-native';
+import {Appearance, DeviceEventEmitter, Platform, Alert, type EmitterSubscription, StatusBar} from 'react-native';
 import {type ComponentWillAppearEvent, type ImageResource, type LayoutOrientation, Navigation, type Options, OptionsModalPresentationStyle, type OptionsTopBarButton, type ScreenPoppedEvent, type EventSubscription} from 'react-native-navigation';
 import tinyColor from 'tinycolor2';
 
@@ -16,6 +16,7 @@ import {getDefaultThemeByAppearance} from '@context/theme';
 import EphemeralStore from '@store/ephemeral_store';
 import NavigationStore from '@store/navigation_store';
 import {isTablet} from '@utils/helpers';
+import {dismissKeyboard} from '@utils/keyboard';
 import {logError} from '@utils/log';
 import {appearanceControlledScreens, mergeNavigationOptions} from '@utils/navigation';
 import {changeOpacity, setNavigatorStyles} from '@utils/theme';
@@ -26,7 +27,6 @@ import type {LaunchProps} from '@typings/launch';
 import type {AvailableScreens, NavButtons} from '@typings/screens/navigation';
 import type {ComponentProps} from 'react';
 import type {IntlShape} from 'react-intl';
-import type {Asset} from 'react-native-image-picker';
 
 const alpha = {
     from: 0,
@@ -860,6 +860,7 @@ export async function dismissAllOverlays() {
 
 type BottomSheetArgs = {
     closeButtonId: string;
+    enableDynamicSizing?: boolean;
     initialSnapIndex?: number;
     footerComponent?: React.FC<BottomSheetFooterProps>;
     renderContent: () => React.ReactNode;
@@ -869,10 +870,11 @@ type BottomSheetArgs = {
     scrollable?: boolean;
 }
 
-export function bottomSheet({title, renderContent, footerComponent, snapPoints, initialSnapIndex = 1, theme, closeButtonId, scrollable = false}: BottomSheetArgs) {
+export function bottomSheet({title, renderContent, footerComponent, snapPoints, initialSnapIndex = 1, theme, closeButtonId, scrollable = false, enableDynamicSizing}: BottomSheetArgs) {
     if (isTablet()) {
         showModal(Screens.BOTTOM_SHEET, title, {
             closeButtonId,
+            enableDynamicSizing,
             initialSnapIndex,
             renderContent,
             footerComponent,
@@ -881,6 +883,7 @@ export function bottomSheet({title, renderContent, footerComponent, snapPoints, 
         }, bottomSheetModalOptions(theme, closeButtonId));
     } else {
         showModalOverCurrentContext(Screens.BOTTOM_SHEET, {
+            enableDynamicSizing,
             initialSnapIndex,
             renderContent,
             footerComponent,
@@ -918,9 +921,10 @@ export function openAttachmentOptions(
     intl: IntlShape,
     theme: Theme,
     props: {
-        onUploadFiles: (files: Asset[]) => void;
+        onUploadFiles: (files: ExtractedFileInfo[]) => void;
         maxFilesReached: boolean;
         canUploadFiles: boolean;
+        showAttachLogs?: boolean;
         testID?: string;
         fileCount?: number;
         maxFileCount?: number;
@@ -990,6 +994,6 @@ export async function openUserProfileModal(
     const title = intl.formatMessage({id: 'mobile.routes.user_profile', defaultMessage: 'Profile'});
     const closeButtonId = 'close-user-profile';
 
-    Keyboard.dismiss();
+    dismissKeyboard();
     openAsBottomSheet({screen, title, theme, closeButtonId, props: {...props}});
 }

@@ -64,7 +64,7 @@ type AuthorsRequest = {
     error?: unknown;
 }
 
-export async function createPost(serverUrl: string, post: Partial<Post>, files: FileInfo[] = []): Promise<{data?: boolean; error?: unknown}> {
+export async function createPost(serverUrl: string, post: Partial<Post>, files: FileInfo[] = []): Promise<{data?: boolean; post?: Post; error?: unknown}> {
     const operator = DatabaseManager.serverDatabases[serverUrl]?.operator;
     if (!operator) {
         return {error: `${serverUrl} database not found`};
@@ -205,7 +205,7 @@ export async function createPost(serverUrl: string, post: Partial<Post>, files: 
 
     newPost = created;
 
-    return {data: true};
+    return {data: true, post: created};
 }
 
 export const retryFailedPost = async (serverUrl: string, post: PostModel) => {
@@ -781,6 +781,18 @@ export async function fetchMissingChannelsFromPosts(serverUrl: string, posts: Po
         };
     } catch (error) {
         logDebug('error on fetchMissingChannelsFromPosts', getFullErrorMessage(error));
+        forceLogoutIfNecessary(serverUrl, error);
+        return {error};
+    }
+}
+
+export async function fetchPostInfo(serverUrl: string, postId: string): Promise<{postInfo?: PostInfo; error?: unknown}> {
+    try {
+        const client = NetworkManager.getClient(serverUrl);
+        const postInfo = await client.getPostInfo(postId);
+        return {postInfo};
+    } catch (error) {
+        logDebug('error on fetchPostInfo', getFullErrorMessage(error));
         forceLogoutIfNecessary(serverUrl, error);
         return {error};
     }

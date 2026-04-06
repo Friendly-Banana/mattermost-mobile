@@ -18,6 +18,7 @@ import {useTheme} from '@context/theme';
 import useAndroidHardwareBackHandler from '@hooks/android_back_handler';
 import {useAutocompleteDefaultAnimatedValues} from '@hooks/autocomplete';
 import {useKeyboardOverlap} from '@hooks/device';
+import useDidMount from '@hooks/did_mount';
 import useDidUpdate from '@hooks/did_update';
 import {useInputPropagation} from '@hooks/input';
 import useNavButtonPressed from '@hooks/navigation_button_pressed';
@@ -25,7 +26,7 @@ import DraftEditPostUploadManager from '@managers/draft_upload_manager';
 import SecurityManager from '@managers/security_manager';
 import PostError from '@screens/edit_post/post_error';
 import {buildNavigationButton, dismissModal, setButtons} from '@screens/navigation';
-import {fileMaxWarning, fileSizeWarning, uploadDisabledWarning} from '@utils/file';
+import {fileMaxWarning, fileSizeWarning, getUploadErrorMessage, uploadDisabledWarning} from '@utils/file';
 import {changeOpacity} from '@utils/theme';
 
 import EditPostInput from './edit_post_input';
@@ -122,12 +123,9 @@ const EditPost = ({
         return !hasUploadingFiles && !tooLong && (messageChanged || filesChanged);
     }, [postMessage, postFiles, editingMessage, maxPostSize, files]);
 
-    useEffect(() => {
+    useDidMount(() => {
         toggleSaveButton(false);
-
-        // No dependencies to avoid unnecessary re-renders since this is a one-time effect
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    });
 
     useEffect(() => {
         const t = setTimeout(() => {
@@ -183,6 +181,10 @@ const EditPost = ({
         });
     }, []);
 
+    const handleUploadError = useCallback((errorMessage: string, errorName?: string) => {
+        setErrorLine(getUploadErrorMessage(intl, errorMessage, errorName));
+    }, [intl]);
+
     const addFiles = useCallback((newFiles: FileInfo[]) => {
         if (!newFiles.length) {
             return;
@@ -219,14 +221,14 @@ const EditPost = ({
                 true, // isEditPost = true
                 updateFileInPostFiles,
             );
-            uploadErrorHandlers.current[file.clientId!] = DraftEditPostUploadManager.registerErrorHandler(file.clientId!, setErrorLine);
+            uploadErrorHandlers.current[file.clientId!] = DraftEditPostUploadManager.registerErrorHandler(file.clientId!, handleUploadError);
         }
 
         const currentMessageTooLong = postMessage.length > maxPostSize;
         if (!currentMessageTooLong) {
             setErrorLine(undefined);
         }
-    }, [canUploadFiles, postFiles?.length, maxFileCount, setErrorLine, intl, maxFileSize, serverUrl, post.channelId, post.rootId, updateFileInPostFiles, postMessage, maxPostSize]);
+    }, [canUploadFiles, postFiles?.length, maxFileCount, setErrorLine, intl, maxFileSize, serverUrl, post.channelId, post.rootId, updateFileInPostFiles, postMessage, maxPostSize, handleUploadError]);
 
     const handleFileRemoval = useCallback((id: string) => {
 
@@ -324,10 +326,10 @@ const EditPost = ({
 
         for (const file of loadingFiles) {
             if (file.clientId && !uploadErrorHandlers.current[file.clientId]) {
-                uploadErrorHandlers.current[file.clientId] = DraftEditPostUploadManager.registerErrorHandler(file.clientId, setErrorLine);
+                uploadErrorHandlers.current[file.clientId] = DraftEditPostUploadManager.registerErrorHandler(file.clientId, handleUploadError);
             }
         }
-    }, [postFiles, postMessage, setErrorLine, shouldEnableSaveButton, toggleSaveButton]);
+    }, [postFiles, postMessage, handleUploadError, shouldEnableSaveButton, toggleSaveButton]);
 
     const onChangeTextCommon = useCallback((message: string) => {
         const tooLong = message.length > maxPostSize;

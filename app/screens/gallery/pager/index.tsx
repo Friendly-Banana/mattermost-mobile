@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {runOnJS, useDerivedValue, useSharedValue, withSpring} from 'react-native-reanimated';
 
 import {pagerSpringVelocityConfig} from '../animation_config/spring';
@@ -32,10 +32,12 @@ const Pager = ({
     const pagerX = useSharedValue(0);
     const skipAnimation = useSharedValue(false);
 
+    // This worklet must NOT be wrapped in useCallback - doing so causes native
+    // use-after-free crashes during Hermes GC when the old ShareableWorklet is freed.
     const getPageTranslate = (i: number, w?: number) => {
         'worklet';
 
-        const t = i * (w || sharedWidth.value);
+        const t = i * (w ?? sharedWidth.value);
         const g = gutterWidthToUse * i;
         return -(t + g);
     };
@@ -67,19 +69,19 @@ const Pager = ({
         return Math.floor(Math.abs(getPageTranslate(index.value))) !== Math.floor(Math.abs(offsetX.value + pagerX.value));
     }, []);
 
-    const updateIndex = (nextIndex: number) => {
+    const onIndexChangeRef = useRef(onIndexChange);
+    onIndexChangeRef.current = onIndexChange;
+
+    const updateIndex = useCallback((nextIndex: number) => {
+        onIndexChangeRef.current?.(nextIndex);
         setActiveIndex(nextIndex);
-    };
+    }, []);
 
     const onIndexChangeCb = useCallback((nextIndex: number) => {
         'worklet';
 
-        if (onIndexChange) {
-            onIndexChange(nextIndex);
-        }
-
         runOnJS(updateIndex)(nextIndex);
-    }, []);
+    }, [updateIndex]);
 
     const sharedValues: PagerSharedValues = useMemo(() => ({
         sharedWidth,
@@ -97,8 +99,8 @@ const Pager = ({
         getPageTranslate,
         isPagerInProgress,
 
-    // the rest of the values are shared values,
-    // so they don't need to be included in the deps
+    // Most values are shared values (stable refs) or worklet functions that must not cause
+    // recreation to avoid native use-after-free crashes during Hermes GC.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }), [gutterWidthToUse, activeIndex, onIndexChangeCb]);
 

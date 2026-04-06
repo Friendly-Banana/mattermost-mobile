@@ -1,7 +1,9 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {checkIsAgentsPluginEnabled} from '@agents/actions/remote/agents_status';
 import {handleAgentPostUpdate} from '@agents/actions/websocket';
+import {handleAgentsEvents} from '@agents/actions/websocket/events';
 
 import * as bookmark from '@actions/local/channel_bookmark';
 import {
@@ -16,9 +18,11 @@ import {handlePlaybookEvents} from '@playbooks/actions/websocket/events';
 
 import * as category from './category';
 import * as channel from './channel';
+import * as files from './files';
 import * as group from './group';
 import {handleOpenDialogEvent} from './integrations';
 import * as posts from './posts';
+import {handlePostTranslationUpdatedEvent} from './posts';
 import * as preferences from './preferences';
 import {handleAddCustomEmoji, handleReactionRemovedFromPostEvent, handleReactionAddedToPostEvent} from './reactions';
 import {handleUserRoleUpdatedEvent, handleTeamMemberRoleUpdatedEvent, handleRoleUpdatedEvent} from './roles';
@@ -273,7 +277,7 @@ export async function handleWebSocketEvent(serverUrl: string, msg: WebSocketMess
         case WebsocketEvents.PLUGIN_STATUSES_CHANGED:
         case WebsocketEvents.PLUGIN_ENABLED:
         case WebsocketEvents.PLUGIN_DISABLED:
-            // Do nothing, this event doesn't need logic in the mobile app
+            checkIsAgentsPluginEnabled(serverUrl);
             break;
 
         // bookmarks
@@ -311,6 +315,7 @@ export async function handleWebSocketEvent(serverUrl: string, msg: WebSocketMess
 
         // Agents
         case WebsocketEvents.AGENTS_POST_UPDATE:
+        case WebsocketEvents.AGENTS_TOOL_CALL_STATUS:
             handleAgentPostUpdate(msg);
             break;
 
@@ -324,6 +329,23 @@ export async function handleWebSocketEvent(serverUrl: string, msg: WebSocketMess
         case WebsocketEvents.BURN_ON_READ_ALL_REVEALED:
             handleBoRPostAllRevealed(serverUrl, msg);
             break;
+
+        // Autotranslation
+        case WebsocketEvents.POST_TRANSLATION_UPDATED:
+            handlePostTranslationUpdatedEvent(serverUrl, msg);
+            break;
+
+        // File access control
+        case WebsocketEvents.FILE_DOWNLOAD_REJECTED:
+            files.handleFileDownloadRejected(serverUrl, msg);
+            break;
+
+        // Toast control
+        case WebsocketEvents.SHOW_TOAST:
+            files.handleShowToast(serverUrl, msg);
+
+            break;
     }
     handlePlaybookEvents(serverUrl, msg);
+    handleAgentsEvents(serverUrl, msg);
 }

@@ -5,7 +5,7 @@ import React, {forwardRef, useCallback, useEffect, useImperativeHandle, useMemo,
 import {BackHandler} from 'react-native';
 import {runOnJS, runOnUI, useAnimatedReaction, type SharedValue} from 'react-native-reanimated';
 
-import {buildFilePreviewUrl} from '@actions/remote/file';
+import {buildFileUrl} from '@actions/remote/file';
 import {ExpoImageAnimated} from '@components/expo_image';
 import {useGallery} from '@context/gallery';
 import {useServerUrl} from '@context/server';
@@ -107,10 +107,7 @@ const Gallery = forwardRef<GalleryRef, GalleryProps>(({
 
         runOnJS(onLocalIndex)(nextIndex);
         sharedValues.activeIndex.value = nextIndex;
-
-        // sharedValues do not trigger re-renders
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [onLocalIndex]);
+    }, [onLocalIndex, sharedValues]);
 
     const renderBackdropComponent = useCallback(
         ({animatedStyles, translateY}: BackdropProps) => {
@@ -150,10 +147,7 @@ const Gallery = forwardRef<GalleryRef, GalleryProps>(({
         sharedValues.y.value = 0;
 
         runOnJS(onHide)();
-
-        // sharedValues do not trigger re-renders
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [onHide, sharedValues]);
 
     const onRenderItem = useCallback((info: RenderItemInfo) => {
         const currentItem = items[localIndex];
@@ -196,7 +190,7 @@ const Gallery = forwardRef<GalleryRef, GalleryProps>(({
 
     const source = useMemo(() => {
         if (isGif(fileInfo) && fileInfo.id && !fileInfo.id.startsWith('uid')) {
-            return buildFilePreviewUrl(serverUrl, fileInfo.id);
+            return buildFileUrl(serverUrl, fileInfo.id, fileInfo.update_at);
         }
 
         return fileInfo.localPath || fileInfo.uri || item.uri;
