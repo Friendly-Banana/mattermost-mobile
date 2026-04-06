@@ -316,6 +316,8 @@ function Permalink({
             EphemeralStore.setHighlightedPostInChannel(serverUrl, channel.id, postId);
             await switchToChannelById(serverUrl, channel.id, channel.teamId);
             await dismissModal({componentId: Screens.PERMALINK});
+
+            // closePermalink updates in-memory modal state synchronously.
             closePermalink();
         }
     }, [channel, postId, serverUrl]));

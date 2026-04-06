@@ -76,18 +76,20 @@ const ChannelPostList = ({
             return undefined;
         }
 
+        // Best-effort prefetch so the linked post can render immediately after jump.
+        // Failing to prefetch should not block channel navigation or transient highlight display.
         fetchPostsAround(serverUrl, channelId, highlightedPostId, PER_PAGE_DEFAULT, isCRTEnabled).then((result) => {
             if (result.error) {
                 logDebug('[ChannelPostList] failed to fetch posts around highlighted post');
             }
         });
 
-        const t = setTimeout(() => {
+        const highlightTimeoutId = setTimeout(() => {
             EphemeralStore.clearHighlightedPostInChannel(serverUrl, channelId);
             setHighlightedPostId(undefined);
         }, 2000);
 
-        return () => clearTimeout(t);
+        return () => clearTimeout(highlightTimeoutId);
     }, [channelId, highlightedPostId, isCRTEnabled, serverUrl]);
 
     useEffect(() => {
