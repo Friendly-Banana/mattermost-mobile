@@ -86,6 +86,8 @@ const ChannelPostList = ({
             const result = await fetchPostsAround(serverUrl, channelId, highlightedPostId, PER_PAGE_DEFAULT, isCRTEnabled);
             if (result.error) {
                 logDebug('[ChannelPostList] failed to fetch posts around highlighted post', result.error);
+
+                // If we can't load the target post, clear the transient highlight state to avoid stale highlights.
                 EphemeralStore.clearHighlightedPostInChannel(serverUrl, channelId);
                 setHighlightedPostId(undefined);
                 return;
@@ -93,6 +95,9 @@ const ChannelPostList = ({
 
             if (!isCancelled) {
                 highlightTimeoutId = setTimeout(() => {
+                    if (isCancelled) {
+                        return;
+                    }
                     EphemeralStore.clearHighlightedPostInChannel(serverUrl, channelId);
                     setHighlightedPostId(undefined);
                 }, HIGHLIGHT_DURATION_MS);
@@ -102,6 +107,7 @@ const ChannelPostList = ({
 
         return () => {
             isCancelled = true;
+            EphemeralStore.clearHighlightedPostInChannel(serverUrl, channelId);
             if (highlightTimeoutId) {
                 clearTimeout(highlightTimeoutId);
             }
