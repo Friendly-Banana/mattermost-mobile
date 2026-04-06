@@ -16,6 +16,7 @@ import useDidMount from '@hooks/did_mount';
 import useDidUpdate from '@hooks/did_update';
 import {useDebounce} from '@hooks/utils';
 import EphemeralStore from '@store/ephemeral_store';
+import {logDebug} from '@utils/log';
 
 import Intro from './intro';
 
@@ -75,7 +76,11 @@ const ChannelPostList = ({
             return undefined;
         }
 
-        fetchPostsAround(serverUrl, channelId, highlightedPostId, PER_PAGE_DEFAULT, isCRTEnabled);
+        fetchPostsAround(serverUrl, channelId, highlightedPostId, PER_PAGE_DEFAULT, isCRTEnabled).then((result) => {
+            if (result.error) {
+                logDebug('[ChannelPostList] failed to fetch posts around highlighted post');
+            }
+        });
 
         const t = setTimeout(() => {
             EphemeralStore.clearHighlightedPostInChannel(serverUrl, channelId);
