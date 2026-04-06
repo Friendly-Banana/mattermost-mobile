@@ -32,6 +32,7 @@ type Props = {
     listRef: React.RefObject<FlatList<string | PostModel>>;
     onTouchMove?: (event: GestureResponderEvent) => void;
     onTouchEnd?: () => void;
+    highlightedId?: string;
 }
 
 const edges: Edge[] = [];
@@ -43,7 +44,7 @@ const styles = StyleSheet.create({
 const ChannelPostList = ({
     channelId, contentContainerStyle, isCRTEnabled,
     lastViewedAt, posts, shouldShowJoinLeaveMessages,
-    listRef, onTouchMove, onTouchEnd,
+    listRef, onTouchMove, onTouchEnd, highlightedId,
 }: Props) => {
     const appState = useAppState();
     const isTablet = useIsTablet();
@@ -131,6 +132,7 @@ const ChannelPostList = ({
             listRef={listRef}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
+            highlightedId={highlightedId}
         />
     );
 

@@ -47,6 +47,8 @@ type ChannelProps = {
     scheduledPostCount: number;
 };
 
+const HIGHLIGHT_DURATION_MS = 5000;
+
 const styles = StyleSheet.create({
     flex: {
         flex: 1,
@@ -72,16 +74,17 @@ const Channel = ({
 }: ChannelProps) => {
     useGMasDMNotice(currentUserId, channelType, dismissedGMasDMNotice, hasGMasDMFeature);
     const isTablet = useIsTablet();
+    const serverUrl = useServerUrl();
     const insets = useSafeAreaInsets();
     const [shouldRenderPosts, setShouldRenderPosts] = useState(false);
     const switchingTeam = useTeamSwitch();
     const switchingChannels = useChannelSwitch();
     const defaultHeight = useDefaultHeaderHeight();
     const [containerHeight, setContainerHeight] = useState(0);
-    const serverUrl = useServerUrl();
     const shouldRender = !switchingTeam && !switchingChannels && shouldRenderPosts && Boolean(channelId);
     const isVisible = useIsScreenVisible(componentId);
     const [isEmojiSearchFocused, setIsEmojiSearchFocused] = useState(false);
+    const [highlightedId, setHighlightedId] = useState<string | undefined>();
 
     const safeAreaViewEdges: Edge[] = useMemo(() => {
         if (isTablet) {
@@ -109,6 +112,23 @@ const Channel = ({
     }, [serverUrl, channelId]);
 
     const marginTop = defaultHeight + (isTablet ? 0 : -insets.top);
+
+    useEffect(() => {
+        // Retrieve and clear target post ID from ephemeral store
+        const targetPostId = EphemeralStore.getAndClearTargetPostId(serverUrl, channelId);
+        if (targetPostId) {
+            setHighlightedId(targetPostId);
+
+            // Clear the highlighted ID after a few seconds to remove the visual highlight
+            const timeout = setTimeout(() => {
+                setHighlightedId(undefined);
+            }, HIGHLIGHT_DURATION_MS);
+
+            return () => clearTimeout(timeout);
+        }
+        return undefined;
+    }, [channelId, serverUrl]);
+
     useEffect(() => {
         // This is done so that the header renders
         // and the screen does not look totally blank
@@ -166,6 +186,7 @@ const Channel = ({
                                 containerHeight={containerHeight}
                                 enabled={isVisible || shouldRender}
                                 onEmojiSearchFocusChange={setIsEmojiSearchFocused}
+                                highlightedId={highlightedId}
                             />
                         )}
                     </KeyboardProvider>
@@ -178,6 +199,7 @@ const Channel = ({
                             containerHeight={containerHeight}
                             enabled={isVisible || shouldRender}
                             onEmojiSearchFocusChange={setIsEmojiSearchFocused}
+                            highlightedId={highlightedId}
                         />
                     )
                 )}

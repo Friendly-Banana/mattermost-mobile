@@ -1138,7 +1138,7 @@ export async function getChannelTimezones(serverUrl: string, channelId: string) 
     }
 }
 
-export async function switchToChannelById(serverUrl: string, channelId: string, teamId?: string, skipLastUnread = false, groupLabel?: RequestGroupLabel) {
+export async function switchToChannelById(serverUrl: string, channelId: string, teamId?: string, skipLastUnread = false, groupLabel?: RequestGroupLabel, targetPostId?: string) {
     if (channelId === Screens.GLOBAL_THREADS) {
         return switchToGlobalThreads(serverUrl, teamId);
     } else if (channelId === Screens.GLOBAL_DRAFTS) {
@@ -1151,6 +1151,11 @@ export async function switchToChannelById(serverUrl: string, channelId: string, 
     }
 
     DeviceEventEmitter.emit(Events.CHANNEL_SWITCH, true);
+
+    // Store target post ID in ephemeral store if provided
+    if (targetPostId) {
+        EphemeralStore.setTargetPostId(serverUrl, channelId, targetPostId);
+    }
 
     fetchPostsForChannel(serverUrl, channelId, false, false, groupLabel);
     fetchChannelBookmarks(serverUrl, channelId, false, groupLabel);

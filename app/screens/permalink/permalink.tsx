@@ -312,9 +312,10 @@ function Permalink({
 
     const handlePress = usePreventDoubleTap(useCallback(() => {
         if (channel) {
-            switchToChannelById(serverUrl, channel.id, channel.teamId);
+            switchToChannelById(serverUrl, channel.id, channel.teamId, false, undefined, postId);
+            handleClose();
         }
-    }, [channel, serverUrl]));
+    }, [channel, serverUrl, postId, handleClose]));
 
     const handleJoin = usePreventDoubleTap(useCallback(async () => {
         setLoading(true);

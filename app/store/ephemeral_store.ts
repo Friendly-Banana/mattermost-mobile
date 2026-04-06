@@ -39,6 +39,7 @@ class EphemeralStoreSingleton {
     private currentThreadId = '';
     private notificationTapped = false;
     private enablingCRT = false;
+    private targetPostId: {[serverUrl: string]: {[channelId: string]: string}} = {};
 
     // There are some corner cases where the react context is not loaded (and therefore
     // launch will be called) but the notification callbacks are registered. This is used
@@ -234,6 +235,22 @@ class EphemeralStoreSingleton {
 
     setCurrentThreadId = (id: string) => {
         this.currentThreadId = id;
+    };
+
+    // Ephemeral for target post ID when navigating to a channel
+    setTargetPostId = (serverUrl: string, channelId: string, postId: string) => {
+        if (!this.targetPostId[serverUrl]) {
+            this.targetPostId[serverUrl] = {};
+        }
+        this.targetPostId[serverUrl][channelId] = postId;
+    };
+
+    getAndClearTargetPostId = (serverUrl: string, channelId: string) => {
+        const postId = this.targetPostId[serverUrl]?.[channelId];
+        if (postId && this.targetPostId[serverUrl]) {
+            delete this.targetPostId[serverUrl][channelId];
+        }
+        return postId;
     };
 
     // Ephemeral control when (un)archiving a channel locally
