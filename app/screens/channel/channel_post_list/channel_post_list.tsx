@@ -51,6 +51,7 @@ const ChannelPostList = ({
     const canLoadPostsBefore = useRef(true);
     const canLoadPost = useRef(true);
     const [fetchingPosts, setFetchingPosts] = useState(EphemeralStore.isLoadingMessagesForChannel(serverUrl, channelId));
+    const [highlightedPostId, setHighlightedPostId] = useState<string | undefined>(() => EphemeralStore.getHighlightedPostInChannel(serverUrl, channelId));
     const oldPostsCount = useRef<number>(posts.length);
 
     const onEndReached = useDebounce(useCallback(async () => {
@@ -66,7 +67,21 @@ const ChannelPostList = ({
 
     useDidUpdate(() => {
         setFetchingPosts(EphemeralStore.isLoadingMessagesForChannel(serverUrl, channelId));
+        setHighlightedPostId(EphemeralStore.getHighlightedPostInChannel(serverUrl, channelId));
     }, [serverUrl, channelId]);
+
+    useEffect(() => {
+        if (!highlightedPostId) {
+            return;
+        }
+
+        const t = setTimeout(() => {
+            EphemeralStore.clearHighlightedPostInChannel(serverUrl, channelId);
+            setHighlightedPostId(undefined);
+        }, 2000);
+
+        return () => clearTimeout(t);
+    }, [channelId, highlightedPostId, serverUrl]);
 
     useEffect(() => {
         const listener = DeviceEventEmitter.addListener(Events.LOADING_CHANNEL_POSTS, ({serverUrl: eventServerUrl, channelId: eventChannelId, value}) => {
@@ -119,6 +134,7 @@ const ChannelPostList = ({
         <PostList
             channelId={channelId}
             contentContainerStyle={[contentContainerStyle, !isCRTEnabled && styles.containerStyle]}
+            highlightedId={highlightedPostId}
             isCRTEnabled={isCRTEnabled}
             footer={intro}
             lastViewedAt={lastViewedAt}

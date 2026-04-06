@@ -26,6 +26,7 @@ import {usePreventDoubleTap} from '@hooks/utils';
 import SecurityManager from '@managers/security_manager';
 import {getChannelById, getMyChannel} from '@queries/servers/channel';
 import {dismissModal} from '@screens/navigation';
+import EphemeralStore from '@store/ephemeral_store';
 import {closePermalink} from '@utils/permalink';
 import {changeOpacity, makeStyleSheetFromTheme} from '@utils/theme';
 import {typography} from '@utils/typography';
@@ -310,11 +311,14 @@ function Permalink({
 
     useAndroidHardwareBackHandler(Screens.PERMALINK, handleClose);
 
-    const handlePress = usePreventDoubleTap(useCallback(() => {
+    const handlePress = usePreventDoubleTap(useCallback(async () => {
         if (channel) {
-            switchToChannelById(serverUrl, channel.id, channel.teamId);
+            await switchToChannelById(serverUrl, channel.id, channel.teamId);
+            EphemeralStore.setHighlightedPostInChannel(serverUrl, channel.id, postId);
+            closePermalink();
+            await dismissModal({componentId: Screens.PERMALINK});
         }
-    }, [channel, serverUrl]));
+    }, [channel, postId, serverUrl]));
 
     const handleJoin = usePreventDoubleTap(useCallback(async () => {
         setLoading(true);

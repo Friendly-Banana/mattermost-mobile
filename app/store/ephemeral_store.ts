@@ -34,6 +34,7 @@ class EphemeralStoreSingleton {
     private archivingChannels = new Set<string>();
     private convertingChannels = new Set<string>();
     private switchingToChannel = new Set<string>();
+    private highlightedPostInChannel: {[serverUrl: string]: {[channelId: string]: string}} = {};
     private acknowledgingPost = new Set<string>();
     private unacknowledgingPost = new Set<string>();
     private currentThreadId = '';
@@ -247,6 +248,30 @@ class EphemeralStoreSingleton {
 
     removeSwitchingToChannel = (channelId: string) => {
         this.switchingToChannel.delete(channelId);
+    };
+
+    setHighlightedPostInChannel = (serverUrl: string, channelId: string, postId: string) => {
+        if (!this.highlightedPostInChannel[serverUrl]) {
+            this.highlightedPostInChannel[serverUrl] = {};
+        }
+
+        this.highlightedPostInChannel[serverUrl][channelId] = postId;
+    };
+
+    getHighlightedPostInChannel = (serverUrl: string, channelId: string) => {
+        return this.highlightedPostInChannel[serverUrl]?.[channelId];
+    };
+
+    clearHighlightedPostInChannel = (serverUrl: string, channelId: string) => {
+        if (!this.highlightedPostInChannel[serverUrl]) {
+            return;
+        }
+
+        delete this.highlightedPostInChannel[serverUrl][channelId];
+
+        if (!Object.keys(this.highlightedPostInChannel[serverUrl]).length) {
+            delete this.highlightedPostInChannel[serverUrl];
+        }
     };
 
     setEnablingCRT = (value: boolean) => {
