@@ -80,7 +80,7 @@ const ChannelPostList = ({
         // Failing to prefetch should not block channel navigation or transient highlight display.
         fetchPostsAround(serverUrl, channelId, highlightedPostId, PER_PAGE_DEFAULT, isCRTEnabled).then((result) => {
             if (result.error) {
-                logDebug('[ChannelPostList] failed to fetch posts around highlighted post');
+                logDebug('[ChannelPostList] failed to fetch posts around highlighted post', result.error);
             }
         });
 
