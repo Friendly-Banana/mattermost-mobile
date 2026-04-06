@@ -53,7 +53,7 @@ const ChannelPostList = ({
     const canLoadPostsBefore = useRef(true);
     const canLoadPost = useRef(true);
     const [fetchingPosts, setFetchingPosts] = useState(EphemeralStore.isLoadingMessagesForChannel(serverUrl, channelId));
-    const [highlightedPostId, setHighlightedPostId] = useState<string | undefined>(() => EphemeralStore.getHighlightedPostInChannel(serverUrl, channelId));
+    const [highlightedPostId, setHighlightedPostId] = useState<string | undefined>();
     const oldPostsCount = useRef<number>(posts.length);
 
     const onEndReached = useDebounce(useCallback(async () => {
@@ -86,6 +86,7 @@ const ChannelPostList = ({
             const result = await fetchPostsAround(serverUrl, channelId, highlightedPostId, PER_PAGE_DEFAULT, isCRTEnabled);
             if (result.error) {
                 logDebug('[ChannelPostList] failed to fetch posts around highlighted post', result.error);
+                return;
             }
 
             if (!isCancelled) {
