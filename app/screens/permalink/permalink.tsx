@@ -318,6 +318,7 @@ function Permalink({
             await switchToChannelById(serverUrl, channel.id, channel.teamId);
             const {error: dismissError} = await dismissModal({componentId: Screens.PERMALINK});
             if (dismissError) {
+                EphemeralStore.clearHighlightedPostInChannel(serverUrl, channel.id);
                 logError('[Permalink.handlePress] failed to dismiss permalink modal', dismissError);
                 return;
             }

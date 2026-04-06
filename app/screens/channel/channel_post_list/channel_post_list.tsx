@@ -77,6 +77,9 @@ const ChannelPostList = ({
             return undefined;
         }
 
+        let highlightTimeoutId: NodeJS.Timeout | undefined;
+        let isCancelled = false;
+
         // Best-effort prefetch so the linked post can render immediately after jump.
         // Failing to prefetch should not block channel navigation or transient highlight display.
         const prefetchHighlightedPost = async () => {
@@ -84,15 +87,22 @@ const ChannelPostList = ({
             if (result.error) {
                 logDebug('[ChannelPostList] failed to fetch posts around highlighted post', result.error);
             }
+
+            if (!isCancelled) {
+                highlightTimeoutId = setTimeout(() => {
+                    EphemeralStore.clearHighlightedPostInChannel(serverUrl, channelId);
+                    setHighlightedPostId(undefined);
+                }, HIGHLIGHT_DURATION_MS);
+            }
         };
         prefetchHighlightedPost();
 
-        const highlightTimeoutId = setTimeout(() => {
-            EphemeralStore.clearHighlightedPostInChannel(serverUrl, channelId);
-            setHighlightedPostId(undefined);
-        }, HIGHLIGHT_DURATION_MS);
-
-        return () => clearTimeout(highlightTimeoutId);
+        return () => {
+            isCancelled = true;
+            if (highlightTimeoutId) {
+                clearTimeout(highlightTimeoutId);
+            }
+        };
     }, [channelId, highlightedPostId, isCRTEnabled, serverUrl]);
 
     useEffect(() => {
