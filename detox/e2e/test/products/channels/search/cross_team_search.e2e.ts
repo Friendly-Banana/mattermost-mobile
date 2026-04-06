@@ -220,11 +220,11 @@ describe('Search - Cross Team Search', () => {
         await offTopicSearchResult.tap();
         await wait(timeouts.TWO_SEC);
 
-        // * q) Verify pop-up headed "Off-Topic" and a button saying "Jump to recent messages"
+        // * q) Verify pop-up headed "Off-Topic" and a button saying "Jump to this message"
         await PermalinkScreen.toBeVisible();
         await expect(PermalinkScreen.jumpToRecentMessagesButton).toBeVisible();
 
-        // # r) Tap on "Jump to recent messages"
+        // # r) Tap on "Jump to this message"
         await PermalinkScreen.jumpToRecentMessages();
         await wait(timeouts.TWO_SEC);
 

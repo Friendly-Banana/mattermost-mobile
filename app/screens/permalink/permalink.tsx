@@ -386,7 +386,7 @@ function Permalink({
                 <View style={style.footer}>
                     <Button
                         size='lg'
-                        text={intl.formatMessage({id: 'mobile.search.jump', defaultMessage: 'Jump to recent messages'})}
+                        text={intl.formatMessage({id: 'mobile.search.jump', defaultMessage: 'Jump to this message'})}
                         theme={theme}
                         onPress={handlePress}
                         testID='permalink.jump_to_recent_messages.button'

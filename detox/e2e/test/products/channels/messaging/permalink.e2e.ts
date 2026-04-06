@@ -77,7 +77,7 @@ describe('Messaging - Permalink', () => {
         const {postListPostItem: permalinkPostListPostItem} = PermalinkScreen.getPostListPostItem(permalinkTargetPost.id, permalinkTargetPost.message);
         await expect(permalinkPostListPostItem).toExist();
 
-        // # Jump to recent messages
+        // # Jump to this message
         await PermalinkScreen.jumpToRecentMessages();
 
         // * Verify on channel screen and target post is displayed

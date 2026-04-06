@@ -80,7 +80,7 @@ describe('Threads - Open Thread in Channel', () => {
         // * Verify on permalink screen
         await PermalinkScreen.toBeVisible();
 
-        // # Jump to recent messages
+        // # Jump to this message
         await PermalinkScreen.jumpToRecentMessages();
 
         // * Verify on channel screen and thread is displayed
@@ -125,7 +125,7 @@ describe('Threads - Open Thread in Channel', () => {
         // * Verify on permalink screen
         await PermalinkScreen.toBeVisible();
 
-        // # Jump to recent messages
+        // # Jump to this message
         await PermalinkScreen.jumpToRecentMessages();
 
         // * Verify on channel screen and thread is displayed

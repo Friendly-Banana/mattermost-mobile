@@ -952,7 +952,7 @@
   "mobile.scheduled_post.update.error": "There was a problem editing this message. Please try again.",
   "mobile.screen.settings": "Settings",
   "mobile.screen.your_profile": "Your Profile",
-  "mobile.search.jump": "Jump to recent messages",
+  "mobile.search.jump": "Jump to this message",
   "mobile.search.modifier.exclude": "exclude search terms",
   "mobile.search.modifier.from": "a specific user",
   "mobile.search.modifier.in": "a specific channel",
