@@ -86,6 +86,8 @@ const ChannelPostList = ({
             const result = await fetchPostsAround(serverUrl, channelId, highlightedPostId, PER_PAGE_DEFAULT, isCRTEnabled);
             if (result.error) {
                 logDebug('[ChannelPostList] failed to fetch posts around highlighted post', result.error);
+                EphemeralStore.clearHighlightedPostInChannel(serverUrl, channelId);
+                setHighlightedPostId(undefined);
                 return;
             }
 
