@@ -6,7 +6,7 @@ import {type StyleProp, StyleSheet, type ViewStyle, DeviceEventEmitter, type Fla
 import {type Edge, SafeAreaView} from 'react-native-safe-area-context';
 
 import {markChannelAsRead, unsetActiveChannelOnServer} from '@actions/remote/channel';
-import {fetchPosts, fetchPostsBefore} from '@actions/remote/post';
+import {fetchPosts, fetchPostsAround, fetchPostsBefore} from '@actions/remote/post';
 import {PER_PAGE_DEFAULT} from '@client/rest/constants';
 import PostList from '@components/post_list';
 import {Events, Screens} from '@constants';
@@ -72,8 +72,10 @@ const ChannelPostList = ({
 
     useEffect(() => {
         if (!highlightedPostId) {
-            return;
+            return undefined;
         }
+
+        fetchPostsAround(serverUrl, channelId, highlightedPostId, PER_PAGE_DEFAULT, isCRTEnabled);
 
         const t = setTimeout(() => {
             EphemeralStore.clearHighlightedPostInChannel(serverUrl, channelId);
@@ -81,7 +83,7 @@ const ChannelPostList = ({
         }, 2000);
 
         return () => clearTimeout(t);
-    }, [channelId, highlightedPostId, serverUrl]);
+    }, [channelId, highlightedPostId, isCRTEnabled, serverUrl]);
 
     useEffect(() => {
         const listener = DeviceEventEmitter.addListener(Events.LOADING_CHANNEL_POSTS, ({serverUrl: eventServerUrl, channelId: eventChannelId, value}) => {

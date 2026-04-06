@@ -313,8 +313,8 @@ function Permalink({
 
     const handlePress = usePreventDoubleTap(useCallback(async () => {
         if (channel) {
-            await switchToChannelById(serverUrl, channel.id, channel.teamId);
             EphemeralStore.setHighlightedPostInChannel(serverUrl, channel.id, postId);
+            await switchToChannelById(serverUrl, channel.id, channel.teamId);
             closePermalink();
             await dismissModal({componentId: Screens.PERMALINK});
         }
