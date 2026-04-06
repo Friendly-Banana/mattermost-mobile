@@ -81,7 +81,6 @@ const Channel = ({
     const switchingChannels = useChannelSwitch();
     const defaultHeight = useDefaultHeaderHeight();
     const [containerHeight, setContainerHeight] = useState(0);
-    const serverUrl = useServerUrl();
     const shouldRender = !switchingTeam && !switchingChannels && shouldRenderPosts && Boolean(channelId);
     const isVisible = useIsScreenVisible(componentId);
     const [isEmojiSearchFocused, setIsEmojiSearchFocused] = useState(false);
