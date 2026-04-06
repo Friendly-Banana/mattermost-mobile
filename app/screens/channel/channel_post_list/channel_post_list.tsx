@@ -36,6 +36,7 @@ type Props = {
 }
 
 const edges: Edge[] = [];
+const HIGHLIGHT_DURATION_MS = 2000;
 const styles = StyleSheet.create({
     flex: {flex: 1},
     containerStyle: {paddingTop: 12},
@@ -87,7 +88,7 @@ const ChannelPostList = ({
         const highlightTimeoutId = setTimeout(() => {
             EphemeralStore.clearHighlightedPostInChannel(serverUrl, channelId);
             setHighlightedPostId(undefined);
-        }, 2000);
+        }, HIGHLIGHT_DURATION_MS);
 
         return () => clearTimeout(highlightTimeoutId);
     }, [channelId, highlightedPostId, isCRTEnabled, serverUrl]);
